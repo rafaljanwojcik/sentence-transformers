@@ -89,8 +89,7 @@ class SentenceTransformer(nn.Sequential):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logging.info("Use pytorch device: {}".format(device))
         self.device = torch.device(device)
-        self = nn.DataParallel(self)
-        self.to(device)
+        #self.to(device)
 
     def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None) -> List[ndarray]:
         """
@@ -291,9 +290,6 @@ class SentenceTransformer(nn.Sequential):
             dataloader.collate_fn = self.smart_batching_collate
 
         loss_models = [loss for _, loss in train_objectives]
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        for loss_model in loss_models:
-            loss_model.to(device)
 
         self.best_score = -9999
 
@@ -330,7 +326,12 @@ class SentenceTransformer(nn.Sequential):
                 model, optimizer = amp.initialize(loss_models[idx], optimizers[idx], opt_level=fp16_opt_level)
                 loss_models[idx] = model
                 optimizers[idx] = optimizer
-
+                
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        for loss_model in loss_models:
+            loss_model = nn.DataParallel(loss_model)
+            loss_model.to(device)
+            
         global_step = 0
         data_iterators = [iter(dataloader) for dataloader in dataloaders]
 
