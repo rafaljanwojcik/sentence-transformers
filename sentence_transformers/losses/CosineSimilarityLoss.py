@@ -14,10 +14,14 @@ class CosineSimilarityLoss(nn.Module):
         rep_a, rep_b = reps
 
         output = torch.cosine_similarity(rep_a, rep_b)
-        loss_fct = nn.MSELoss()
-
+        if labels is not None:
+            return output
+        else: 
+            return reps, output
+        '''
         if labels is not None:
             loss = loss_fct(output, labels.view(-1))
             return loss
         else:
             return reps, output
+        '''

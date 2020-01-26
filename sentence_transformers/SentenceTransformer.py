@@ -328,8 +328,8 @@ class SentenceTransformer(nn.Sequential):
                 optimizers[idx] = optimizer
                 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        loss_models = list(map(lambda x: nn.DataParallel(x), loss_models))
         for loss_model in loss_models:
-            loss_model = nn.DataParallel(loss_model)
             loss_model.to(device)
             
         global_step = 0
@@ -360,13 +360,21 @@ class SentenceTransformer(nn.Sequential):
                     data = next(data_iterator)
 
                 features, labels = batch_to_device(data, self.device)
-                loss_value = loss_model(features, labels)
-
+                
+                if labels is not None:
+                    outputs = loss_model(features, labels)
+                    loss_fct = nn.MSELoss()
+                    loss_value = loss_fct(outputs, labels.view(-1))
+                else: 
+                    loss_value = loss_model(features, labels)
+                    
                 if fp16:
+                    print('fp16')
                     with amp.scale_loss(loss_value, optimizer) as scaled_loss:
                         scaled_loss.backward()
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), max_grad_norm)
                 else:
+                    print('normal')
                     loss_value.backward()
                     torch.nn.utils.clip_grad_norm_(loss_model.parameters(), max_grad_norm)
 
