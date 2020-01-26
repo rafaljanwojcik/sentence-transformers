@@ -9,6 +9,7 @@ from zipfile import ZipFile
 import numpy as np
 import transformers
 import torch
+
 from numpy import ndarray
 from torch import nn, Tensor
 from torch.optim import Optimizer
@@ -88,6 +89,7 @@ class SentenceTransformer(nn.Sequential):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logging.info("Use pytorch device: {}".format(device))
         self.device = torch.device(device)
+        self = nn.DataParallel(self)
         self.to(device)
 
     def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None) -> List[ndarray]:
