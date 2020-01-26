@@ -52,36 +52,7 @@ class SentenceTransformer(nn.Sequential):
                 if not os.listdir(model_path):
                     if model_url[-1] is "/":
                         model_url = model_url[:-1]
-                    logging.info("Downloading sentence transformer model from {} and saving it at {}".format(model_url, model_path))
-                    try:
-                        zip_save_path = os.path.join(model_path, 'model.zip')
-                        http_get(model_url, zip_save_path)
-                        with ZipFile(zip_save_path, 'r') as zip:
-                            zip.extractall(model_path)
-                    except Exception as e:
-                        shutil.rmtree(model_path)
-                        raise e
-            else:
-                model_path = model_name_or_path
-
-            #### Load from disk
-            if model_path is not None:
-                logging.info("Load SentenceTransformer from folder: {}".format(model_path))
-
-                if os.path.exists(os.path.join(model_path, 'config.json')):
-                    with open(os.path.join(model_path, 'config.json')) as fIn:
-                        config = json.load(fIn)
-                        if config['__version__'] > __version__:
-                            logging.warning("You try to use a model that was created with version {}, however, your version is {}. This might cause unexpected behavior or errors. In that case, try to update to the latest version.\n\n\n".format(config['__version__'], __version__))
-
-                with open(os.path.join(model_path, 'modules.json')) as fIn:
-                    contained_modules = json.load(fIn)
-
-                modules = OrderedDict()
-                for module_config in contained_modules:
-                    module_class = import_from_string(module_config['type'])
-                    module = module_class.load(os.path.join(model_path, module_config['path']))
-                    modules[module_config['name']] = module
+                    logging.info("Downloading sentence tiiule
 
 
         super().__init__(modules)
@@ -89,8 +60,6 @@ class SentenceTransformer(nn.Sequential):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logging.info("Use pytorch device: {}".format(device))
         self.device = torch.device(device)
-        self = nn.DataParallel(self)
-        self.to(device)
 
     def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None) -> List[ndarray]:
         """
@@ -291,9 +260,6 @@ class SentenceTransformer(nn.Sequential):
             dataloader.collate_fn = self.smart_batching_collate
 
         loss_models = [loss for _, loss in train_objectives]
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        for loss_model in loss_models:
-            loss_model.to(device)
 
         self.best_score = -9999
 
@@ -330,7 +296,12 @@ class SentenceTransformer(nn.Sequential):
                 model, optimizer = amp.initialize(loss_models[idx], optimizers[idx], opt_level=fp16_opt_level)
                 loss_models[idx] = model
                 optimizers[idx] = optimizer
-
+                
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        loss_models = list(map(lambda x: nn.DataParallel(x), loss_models))
+        for loss_model in loss_models:
+            loss_model.to(device)
+            
         global_step = 0
         data_iterators = [iter(dataloader) for dataloader in dataloaders]
 
@@ -359,8 +330,14 @@ class SentenceTransformer(nn.Sequential):
                     data = next(data_iterator)
 
                 features, labels = batch_to_device(data, self.device)
-                loss_value = loss_model(features, labels)
-
+                
+                if labels is not None:
+                    outputs = loss_model(features, labels)
+                    loss_fct = nn.MSELoss()
+                    loss_value = loss_fct(outputs, labels.view(-1))
+                else: 
+                    loss_value = loss_model(features, labels)
+                    
                 if fp16:
                     with amp.scale_loss(loss_value, optimizer) as scaled_loss:
                         scaled_loss.backward()
