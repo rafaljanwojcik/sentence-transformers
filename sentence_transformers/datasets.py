@@ -54,7 +54,7 @@ class SentencesDataset(Dataset):
         max_seq_length = model.get_max_seq_length()
 
         if self.show_progress_bar:
-            iterator = tqdm(iterator, desc="Convert dataset3")
+            iterator = tqdm(iterator, desc="Convert datasetaaaa")
 
         for ex_index, example in enumerate(iterator):
             if label_type is None:
@@ -155,7 +155,7 @@ class SentenceLabelDataset(Dataset):
         label_sent_mapping = {}
         too_long = 0
         label_type = None
-        for ex_index, example in enumerate(tqdm(examples, desc="Convert dataset2")):
+        for ex_index, example in enumerate(tqdm(examples, desc="Convert datasetttt")):
             if label_type is None:
                 if isinstance(example.label, int):
                     label_type = torch.long
