@@ -18,10 +18,3 @@ class CosineSimilarityLoss(nn.Module):
             return output
         else: 
             return reps, output
-        '''
-        if labels is not None:
-            loss = loss_fct(output, labels.view(-1))
-            return loss
-        else:
-            return reps, output
-        '''
