@@ -14,7 +14,7 @@ from numpy import ndarray
 from torch import nn, Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 from . import __DOWNLOAD_SERVER__
 from .evaluation import SentenceEvaluator
@@ -335,14 +335,14 @@ class SentenceTransformer(nn.Sequential):
         data_iterators = [iter(dataloader) for dataloader in dataloaders]
 
         num_train_objectives = len(train_objectives)
-        for epoch in trange(epochs, desc="Epoch"):
+        for epoch in tqdm(range(epochs), desc="Epoch"):
             training_steps = 0
 
             for loss_model in loss_models:
                 loss_model.zero_grad()
                 loss_model.train()
 
-            for step in trange(num_train_objectives * min_batch_size, desc="Iteration"):
+            for step in tqdm(range(num_train_objectives * min_batch_size), desc="Iteration"):
                 idx = step % num_train_objectives
 
                 loss_model = loss_models[idx]
