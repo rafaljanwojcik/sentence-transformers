@@ -298,6 +298,7 @@ class SentenceTransformer(nn.Sequential):
         # Prepare optimizers
         optimizers = []
         schedulers = []
+        
         for loss_model in loss_models:
             param_optimizer = list(loss_model.named_parameters())
             no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']

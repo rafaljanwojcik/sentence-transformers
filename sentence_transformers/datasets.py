@@ -54,7 +54,7 @@ class SentencesDataset(Dataset):
         max_seq_length = model.get_max_seq_length()
 
         if self.show_progress_bar:
-            iterator = tqdm(iterator, desc="Convert dataset")
+            iterator = tqdm(iterator, desc="Convert dataseta")
 
         for ex_index, example in enumerate(iterator):
             if label_type is None:
@@ -71,6 +71,7 @@ class SentencesDataset(Dataset):
             labels.append(example.label)
             for i in range(num_texts):
                 inputs[i].append(tokenized_texts[i])
+        iterator.close()
 
         tensor_labels = torch.tensor(labels, dtype=label_type)
 
