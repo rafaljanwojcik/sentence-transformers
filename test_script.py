@@ -1,10 +1,13 @@
 import os
-os.chdir('./sentence-transformers')
+#os.chdir('./sentence-transformers')
 print(os.getcwd())
-# some_file.py
+
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
-sys.path.insert(1, '/home/jupyter/sentence-transformers')
+#google cloud/local
+sys.path.insert(1, os.getcwd()+'/sentence-transformers')
+#google colab
+#sys.path.insert(1, '/content/sentence-transformers')
 
 import pandas as pd
 import numpy as np
@@ -28,11 +31,11 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
                     handlers=[LoggingHandler()])
 
 logging.info('Reading questions.csv dataset')
-temp = pd.read_csv("../questions.csv", header=None)
+temp = pd.read_csv("questions.csv", header=None)
 train, dev = train_test_split(temp, test_size=0.3, random_state=42)
-dev.to_csv('../dev_testing.csv', header=False, index=False)
-c = pd.read_csv('../dev_testing.csv', header=None)
-c[~(c[5]=='is_duplicate')].to_csv('../dev_testing.csv', index=False, header=False)
+dev.to_csv('dev_testing.csv', header=False, index=False)
+c = pd.read_csv('dev_testing.csv', header=None)
+c[~(c[5]=='is_duplicate')].to_csv('dev_testing.csv', index=False, header=False)
 
 
 dataset = STSDataReader('', s1_col_idx = 3, s2_col_idx = 4, score_col_idx = 5, delimiter=',', normalize_scores=False, quoting=1)
@@ -40,12 +43,12 @@ dataset = STSDataReader('', s1_col_idx = 3, s2_col_idx = 4, score_col_idx = 5, d
 train_batch_size = 64
 model_name = 'bert-base-nli-mean-tokens'
 num_epochs = 4
-model_save_path = 'output/training_stsbenchmark_continue_training-bert-base-nli-mean-tokens-2020-01-27_09-55-45'
+model_save_path = 'wyniki'
 model = SentenceTransformer(model_save_path)
 
 logging.info('reading test dataset')
-test_data = SentencesDataset(examples=dataset.get_examples("../dev_testing.csv"), model=model)
+test_data = SentencesDataset(examples=dataset.get_examples("dev_testing.csv"), model=model)
 test_dataloader = DataLoader(test_data, shuffle=False, batch_size=train_batch_size)
 evaluator = LabelAccuracyEvaluator(test_dataloader)
 
-model.evaluate(evaluator, output_path = '/home/jupyter/')
+model.evaluate(evaluator, output_path = 'wyniki')
