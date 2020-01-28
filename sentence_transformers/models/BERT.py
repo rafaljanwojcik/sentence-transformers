@@ -21,7 +21,7 @@ class BERT(nn.Module):
             max_seq_length = 510
         self.max_seq_length = max_seq_length
 
-        self.bert = BertModel.from_pretrained(model_name_or_path, from_tf=True)
+        self.bert = BertModel.from_pretrained(model_name_or_path)
         self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path, do_lower_case=do_lower_case)
         self.cls_token_id = self.tokenizer.convert_tokens_to_ids([self.tokenizer.cls_token])[0]
         self.sep_token_id = self.tokenizer.convert_tokens_to_ids([self.tokenizer.sep_token])[0]
