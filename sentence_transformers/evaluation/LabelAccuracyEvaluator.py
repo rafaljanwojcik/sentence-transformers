@@ -6,6 +6,7 @@ from tqdm import tqdm
 from ..util import batch_to_device
 import os
 import csv
+import torch.nn as nn
 
 class LabelAccuracyEvaluator(SentenceEvaluator):
     """
@@ -16,7 +17,7 @@ class LabelAccuracyEvaluator(SentenceEvaluator):
     The results are written in a CSV. If a CSV already exists, then values are appended.
     """
 
-    def __init__(self, dataloader: DataLoader, name: str = "", softmax_model = None):
+    def __init__(self, dataloader: DataLoader, name: str = ""):
         """
         Constructs an evaluator for the given dataset
 
@@ -26,8 +27,6 @@ class LabelAccuracyEvaluator(SentenceEvaluator):
         self.dataloader = dataloader
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.name = name
-        self.softmax_model = softmax_model
-        self.softmax_model.to(self.device)
 
         if name:
             name = "_"+name
@@ -50,13 +49,16 @@ class LabelAccuracyEvaluator(SentenceEvaluator):
 
         logging.info("Evaluation on the "+self.name+" dataset"+out_txt)
         self.dataloader.collate_fn = model.smart_batching_collate
+        model = nn.DataParallel(model)
+        model.to(self.device)
         for step, batch in enumerate(tqdm(self.dataloader, desc="Evaluating")):
-            features, label_ids = batch_to_device(batch, self.device)
+            features, label_ids = batch_to_device(batch, self.device)      
             with torch.no_grad():
-                _, prediction = self.softmax_model(features, labels=None)
-
+                reps = [model(sentence_feature)['sentence_embedding'] for sentence_feature in features]
+                rep_a, rep_b = reps     
+                prediction = torch.cosine_similarity(rep_a, rep_b)
             total += prediction.size(0)
-            correct += torch.argmax(prediction, dim=1).eq(label_ids).sum().item()
+            correct += (prediction>0.5).eq(label_ids).sum().item()
         accuracy = correct/total
 
         logging.info("Accuracy: {:.4f} ({}/{})\n".format(accuracy, correct, total))
